@@ -60,6 +60,9 @@ def apply_overrides(schedule, overrides, from_time, until_time):
     return final_schedule
 
 def generate_schedule(users, start_time, interval_days, from_time, until_time):
+    # If there is no users, return empty schedule
+    if not users:
+        return []
     schedule = []
     current_time = start_time
     user_count = len(users)
@@ -78,7 +81,8 @@ def generate_schedule(users, start_time, interval_days, from_time, until_time):
     
     return schedule
 
-def testOne():
+def main():
+    # Parse command line arguments
     arg_parser = argparse.ArgumentParser(description='Render on-call schedule with overrides')
     arg_parser.add_argument('--schedule', required=True, help='Path to schedule JSON file')
     arg_parser.add_argument('--overrides', required=True, help='Path to overrides JSON file')
@@ -90,7 +94,6 @@ def testOne():
     # Load JSON inputs
     schedule_data = load_json(args.schedule)
     overrides_data = load_json(args.overrides)
-    print(overrides_data)
     
     # Parse input times
     from_time = parser.parse(args.from_time)
@@ -110,4 +113,4 @@ def testOne():
     print(json.dumps(final_schedule, indent=2))
 
 if __name__ == "__main__":
-    testOne()
+    main()
