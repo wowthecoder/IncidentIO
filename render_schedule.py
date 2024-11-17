@@ -8,12 +8,18 @@ def load_json(file_path):
         return json.load(file)
 
 def apply_overrides(schedule, overrides, from_time, until_time):
+    if not overrides:
+        return schedule
+    
     final_schedule = []
+    shift_index, shift_count = 0, len(schedule)
     
     # Sort overrides by start time
     overrides = sorted(overrides, key=lambda x: parser.parse(x['start_at']))
+    override_index, override_count = 0, len(overrides)
     
-    for shift in schedule:
+    while shift_index < shift_count:
+        shift = schedule[shift_index]
         shift_start = parser.parse(shift['start_at'])
         shift_end = parser.parse(shift['end_at'])
         
@@ -27,35 +33,55 @@ def apply_overrides(schedule, overrides, from_time, until_time):
         
         current_start = shift_start
         
-        for override in overrides:
+        while override_index < override_count:
+            override = overrides[override_index]
             override_start = parser.parse(override['start_at'])
             override_end = parser.parse(override['end_at'])
             
-            if override_end <= shift_start or override_start >= shift_end:
-                # Override does not affect this shift
+            if override_end <= shift_start:
+                # This override is completely before the shift, move to the next override
+                override_index += 1
                 continue
+
+            if override_start >= shift_end:
+                # This override is completely after the shift, break out of the loop
+                break
             
+            # Add the part of the shift before the override (if any)
             if current_start < override_start:
                 final_schedule.append({
                     "user": shift['user'],
                     "start_at": current_start.isoformat(),
-                    "end_at": min(override_start, shift_end).isoformat()
+                    "end_at": override_start.isoformat()
                 })
-                
+
+            # Add the overridden part of the shift   
             final_schedule.append({
                 "user": override['user'],
-                "start_at": max(override_start, shift_start).isoformat(),
-                "end_at": min(override_end, shift_end).isoformat()
+                "start_at": override_start.isoformat(),
+                "end_at": override_end.isoformat()
             })
             
             current_start = max(override_end, current_start)
+
+            override_index += 1
+
+            while override_end >= shift_end:
+                shift_index += 1
+                shift = schedule[shift_index]
+                shift_end = parser.parse(shift['end_at'])
         
+        # Add the part of the shift after the last override (if any)
+        shift = schedule[shift_index]
+        shift_end = parser.parse(shift['end_at'])
         if current_start < shift_end:
             final_schedule.append({
                 "user": shift['user'],
                 "start_at": current_start.isoformat(),
                 "end_at": shift_end.isoformat()
             })
+
+        shift_index += 1
     
     return final_schedule
 
@@ -77,6 +103,7 @@ def generate_schedule(users, start_time, interval_days, from_time, until_time):
                 "end_at": min(end_time, until_time).isoformat()
             })
         current_time = end_time
+        # Select next user
         user_index = (user_index + 1) % user_count
     
     return schedule
@@ -111,6 +138,10 @@ def main():
     
     # Output final schedule in JSON format
     print(json.dumps(final_schedule, indent=2))
+
+    # Write output to file
+    with open('output/output.json', 'w') as f:
+        json.dump(final_schedule, f, indent=2)
 
 if __name__ == "__main__":
     main()
