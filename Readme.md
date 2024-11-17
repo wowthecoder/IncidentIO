@@ -9,8 +9,8 @@ Run `python render_schedule.py --schedule=test/schedule1.json --overrides=test/o
 
 # Tests
 1. Empty schedule
-    - Command: `haha`
-    - Expected result: should return an empty schedule
+  - Command: `haha`
+  - Expected result: should return an empty schedule
 2. Empty override
     - Command: `haha`
     - Expected result: should return a schedule with users at specified intervals
