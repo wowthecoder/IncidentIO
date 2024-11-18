@@ -37,6 +37,12 @@ def apply_overrides(schedule, overrides, from_time, until_time):
             override = overrides[override_index]
             override_start = parser.parse(override['start_at'])
             override_end = parser.parse(override['end_at'])
+
+            # Cut off overrides that are outside of time range
+            if override_start < from_time:
+                override_start = from_time
+            if override_end > until_time:
+                override_end = until_time
             
             if override_end <= shift_start:
                 # This override is completely before the shift, move to the next override
@@ -68,10 +74,14 @@ def apply_overrides(schedule, overrides, from_time, until_time):
 
             while override_end >= shift_end:
                 shift_index += 1
+                if shift_index >= shift_count:
+                    break
                 shift = schedule[shift_index]
                 shift_end = parser.parse(shift['end_at'])
         
         # Add the part of the shift after the last override (if any)
+        if shift_index >= shift_count:
+            break
         shift = schedule[shift_index]
         shift_end = parser.parse(shift['end_at'])
         if current_start < shift_end:
